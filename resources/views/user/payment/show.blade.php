@@ -152,14 +152,23 @@
             </table>
 
             <div class="summary-box">
+                @php
+                    $itemsTotal = $order->items->sum(fn($i) => $i->price * $i->quantity);
+                @endphp
                 <div class="summary-row">
                     <span>Tiền hàng:</span>
-                    <strong>{{ number_format($order->total_price - $order->ghn_total_fee) }} đ</strong>
+                    <strong>{{ number_format($itemsTotal) }} đ</strong>
                 </div>
                 <div class="summary-row">
                     <span>Phí vận chuyển GHN:</span>
                     <strong>{{ number_format($order->ghn_total_fee) }} đ</strong>
                 </div>
+                @if($order->discount_amount > 0)
+                    <div class="summary-row" style="color: #059669;">
+                        <span><i class="fa-solid fa-tag"></i> Khuyến mãi {{ $order->coupon_code ? "({$order->coupon_code})" : '' }}:</span>
+                        <strong>-{{ number_format($order->discount_amount) }} đ</strong>
+                    </div>
+                @endif
                 <div class="summary-row total">
                     <span>Tổng thanh toán:</span>
                     <strong style="color: #ff6600;">{{ number_format($order->total_price) }} đ</strong>

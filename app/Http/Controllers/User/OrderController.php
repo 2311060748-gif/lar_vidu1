@@ -76,16 +76,34 @@ class OrderController extends Controller
             ? (int) ($feeResponse['data']['total'] ?? 0)
             : (int) ($request->shipping_fee ?? 0);
 
-        // Tổng thanh toán = Tiền hàng + Phí ship
-        $finalTotal = $subtotal + $shippingFee;
+        // 3. Xử lý mã khuyến mãi / giảm giá (Coupon)
+        $couponCode = strtoupper(trim($request->input('coupon_code', '')));
+        $discountAmount = 0;
+        $validCoupon = null;
 
-        // 3. Tạo đơn hàng và chi tiết đơn hàng trong Database
-        $order = DB::transaction(function () use ($request, $shippingFee, $finalTotal, $cart) {
+        if (!empty($couponCode)) {
+            $validCoupon = \App\Models\Coupon::where('code', $couponCode)->first();
+            if ($validCoupon) {
+                $check = $validCoupon->isValidForOrder($subtotal, $shippingFee);
+                if ($check['valid']) {
+                    $discountAmount = $validCoupon->calculateDiscount($subtotal, $shippingFee);
+                    $validCoupon->increment('used_count');
+                }
+            }
+        }
+
+        // Tổng thanh toán = Tiền hàng + Phí ship - Giảm giá
+        $finalTotal = max(0, $subtotal + $shippingFee - $discountAmount);
+
+        // 4. Tạo đơn hàng và chi tiết đơn hàng trong Database
+        $order = DB::transaction(function () use ($request, $shippingFee, $finalTotal, $discountAmount, $validCoupon, $cart) {
             $order = Order::create([
                 'user_id' => Auth::id(),
                 'name' => $request->name,
                 'address' => $request->address,
                 'phone' => $request->phone,
+                'coupon_code' => $validCoupon ? $validCoupon->code : null,
+                'discount_amount' => $discountAmount,
                 'total_price' => $finalTotal,
                 'status' => 'pending',
                 'to_district_id' => (int) $request->to_district_id,
@@ -131,8 +149,9 @@ class OrderController extends Controller
             return $order;
         });
 
-        // Xóa session giỏ hàng
+        // Xóa session giỏ hàng và session mã giảm giá
         session()->forget('cart');
+        session()->forget('applied_coupon');
 
         // 4. Phân luồng thanh toán
         if ($request->payment_method === 'momo') {

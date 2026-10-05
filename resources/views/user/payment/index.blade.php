@@ -50,6 +50,95 @@
         .momo-badge { background: #d82d8b; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; display: inline-flex; align-items: center; gap: 4px; }
         .cod-badge { background: #059669; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; display: inline-flex; align-items: center; gap: 4px; }
 
+        /* Coupon styles */
+        .coupon-box {
+            background: #fdf8f0;
+            border: 1px dashed #f59e0b;
+            border-radius: 10px;
+            padding: 14px;
+            margin: 16px 0;
+        }
+        .coupon-input-group {
+            display: flex;
+            gap: 8px;
+        }
+        .coupon-input {
+            flex: 1;
+            padding: 9px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            outline: none;
+            background: #fff;
+        }
+        .coupon-input:focus {
+            border-color: #ff9900;
+            box-shadow: 0 0 0 2px rgba(255, 153, 0, 0.15);
+        }
+        .btn-apply-coupon {
+            background: #ff9900;
+            color: #fff;
+            border: none;
+            padding: 9px 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .btn-apply-coupon:hover {
+            background: #e88a00;
+        }
+        .coupon-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .coupon-tag {
+            background: #fff;
+            border: 1px solid #fed7aa;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 11px;
+            color: #b45309;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.15s;
+            font-weight: 600;
+        }
+        .coupon-tag:hover {
+            background: #ffedd5;
+            border-color: #f97316;
+            transform: translateY(-1px);
+        }
+        .coupon-applied-badge {
+            background: #ecfdf5;
+            border: 1px solid #6ee7b7;
+            color: #065f46;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 8px;
+        }
+        .btn-remove-coupon {
+            background: none;
+            border: none;
+            color: #dc2626;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
         @media (max-width: 800px) {
             .checkout-grid { grid-template-columns: 1fr; }
             .form-row { grid-template-columns: 1fr; }
@@ -85,6 +174,8 @@
             <input type="hidden" id="to_district_id" name="to_district_id" value="">
             <input type="hidden" id="to_ward_code" name="to_ward_code" value="">
             <input type="hidden" id="shipping_fee" name="shipping_fee" value="0">
+            <input type="hidden" id="coupon_code" name="coupon_code" value="">
+            <input type="hidden" id="discount_amount" name="discount_amount" value="0">
             <input type="hidden" id="total_price_input" name="total_price_input" value="{{ $totalPrice }}">
 
             <div class="checkout-grid">
@@ -163,6 +254,47 @@
                     <div class="summary-row">
                         <span>Phí vận chuyển (GHN):</span>
                         <span id="shipping_fee_text" class="shipping-badge">Chưa tính phí</span>
+                    </div>
+
+                    <!-- DÒNG GIẢM GIÁ KHUYẾN MÃI -->
+                    <div class="summary-row" id="discount_row" style="display: none; color: #059669;">
+                        <span><i class="fa-solid fa-tag"></i> Giảm giá khuyến mãi:</span>
+                        <strong id="discount_amount_text">-0 đ</strong>
+                    </div>
+
+                    <!-- KHỐI NHẬP MÃ GIẢM GIÁ / KHUYẾN MÃI -->
+                    <div class="coupon-box">
+                        <label style="font-weight: 700; font-size: 13px; color: #92400e; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <span><i class="fa-solid fa-ticket"></i> Mã Giảm Giá / Khuyến Mãi</span>
+                            <span style="font-size: 11px; color: #d97706; font-weight: normal;">Tiết kiệm hơn</span>
+                        </label>
+                        <div class="coupon-input-group">
+                            <input type="text" id="coupon_input" class="coupon-input" placeholder="Nhập mã (VD: GIAM10, SALE50K...)">
+                            <button type="button" class="btn-apply-coupon" id="btn-apply-coupon">
+                                <i class="fa-solid fa-check"></i> Áp dụng
+                            </button>
+                        </div>
+                        <div id="coupon-message" style="font-size: 12px; margin-top: 6px; display: none;"></div>
+
+                        <!-- Badge hiển thị khi đã áp dụng mã -->
+                        <div id="coupon-applied-container" style="display: none;">
+                            <div class="coupon-applied-badge">
+                                <span><i class="fa-solid fa-circle-check"></i> Đang dùng: <strong id="applied-coupon-name"></strong></span>
+                                <button type="button" class="btn-remove-coupon" id="btn-remove-coupon" title="Gỡ bỏ mã này">✕ Bỏ chọn</button>
+                            </div>
+                        </div>
+
+                        <!-- Gợi ý mã có sẵn -->
+                        <div style="margin-top: 10px;">
+                            <div style="font-size: 11px; color: #78350f; font-weight: 600; margin-bottom: 5px;">Mã gợi ý cho bạn (Bấm để chọn ngay):</div>
+                            <div class="coupon-tags" id="coupon-suggestions">
+                                <span class="coupon-tag" onclick="selectCoupon('GIAM10')">🎟️ GIAM10 (-10%)</span>
+                                <span class="coupon-tag" onclick="selectCoupon('SALE50K')">🎟️ SALE50K (-50k)</span>
+                                <span class="coupon-tag" onclick="selectCoupon('FREESHIP')">🚚 FREESHIP (-30k)</span>
+                                <span class="coupon-tag" onclick="selectCoupon('PHUKIEN20K')">⚡ PHUKIEN20K (-20k)</span>
+                                <span class="coupon-tag" onclick="selectCoupon('VIP15')">⭐ VIP15 (-15%)</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="summary-row total">
@@ -304,6 +436,175 @@
                 });
         });
 
+        // 4. Biến lưu trữ trạng thái tính toán
+        let currentShippingFee = 0;
+        let currentDiscount = 0;
+        let currentCouponCode = '';
+
+        const couponInput = document.getElementById('coupon_input');
+        const btnApplyCoupon = document.getElementById('btn-apply-coupon');
+        const btnRemoveCoupon = document.getElementById('btn-remove-coupon');
+        const couponMessage = document.getElementById('coupon-message');
+        const couponAppliedContainer = document.getElementById('coupon-applied-container');
+        const appliedCouponName = document.getElementById('applied-coupon-name');
+        const discountRow = document.getElementById('discount_row');
+        const discountAmountText = document.getElementById('discount_amount_text');
+        const couponCodeInput = document.getElementById('coupon_code');
+        const discountAmountInput = document.getElementById('discount_amount');
+
+        // Hàm cập nhật tổng tiền thanh toán
+        function updateTotals(fee) {
+            currentShippingFee = (typeof fee === 'number') ? fee : currentShippingFee;
+            shippingFeeText.innerText = new Intl.NumberFormat('vi-VN').format(currentShippingFee) + ' VNĐ';
+
+            // Tổng thanh toán = Tiền hàng + Phí ship - Khuyến mãi
+            const finalAmount = Math.max(0, subtotal + currentShippingFee - currentDiscount);
+            finalTotalText.innerText = new Intl.NumberFormat('vi-VN').format(finalAmount) + ' VNĐ';
+
+            if (totalPriceInput) {
+                totalPriceInput.value = finalAmount;
+            }
+            if (shippingFeeInput) {
+                shippingFeeInput.value = currentShippingFee;
+            }
+            if (discountAmountInput) {
+                discountAmountInput.value = currentDiscount;
+            }
+            if (couponCodeInput) {
+                couponCodeInput.value = currentCouponCode;
+            }
+        }
+
+        // Chọn nhanh mã khuyến mãi từ danh sách gợi ý
+        window.selectCoupon = function (code) {
+            if (couponInput) {
+                couponInput.value = code;
+                applyCoupon(code);
+            }
+        };
+
+        // Hàm gọi API áp dụng mã khuyến mãi
+        function applyCoupon(customCode) {
+            const code = (customCode || (couponInput ? couponInput.value : '')).trim();
+            if (!code) {
+                showCouponMessage('Vui lòng nhập mã khuyến mãi.', false);
+                return;
+            }
+
+            btnApplyCoupon.disabled = true;
+            btnApplyCoupon.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Kiểm tra...';
+
+            fetch("{{ route('coupon.apply') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    code: code,
+                    subtotal: subtotal,
+                    shipping_fee: currentShippingFee
+                })
+            })
+            .then(res => res.json().then(data => ({ status: res.status, body: data })))
+            .then(({ status, body }) => {
+                btnApplyCoupon.disabled = false;
+                btnApplyCoupon.innerHTML = '<i class="fa-solid fa-check"></i> Áp dụng';
+
+                if (body.success) {
+                    currentDiscount = parseFloat(body.discount_amount) || 0;
+                    currentCouponCode = body.coupon.code;
+
+                    // Hiển thị thông báo thành công
+                    showCouponMessage(body.message, true);
+
+                    // Hiển thị badge mã đang dùng
+                    if (couponAppliedContainer && appliedCouponName) {
+                        appliedCouponName.innerText = body.coupon.code + ' (' + body.discount_formatted + ')';
+                        couponAppliedContainer.style.display = 'block';
+                    }
+
+                    // Hiển thị dòng giảm giá trong tóm tắt
+                    if (discountRow && discountAmountText) {
+                        discountAmountText.innerText = body.discount_formatted;
+                        discountRow.style.display = 'flex';
+                    }
+
+                    // Cập nhật lại tổng tiền
+                    updateTotals(currentShippingFee);
+                } else {
+                    showCouponMessage(body.message || 'Mã giảm giá không hợp lệ.', false);
+                }
+            })
+            .catch(err => {
+                btnApplyCoupon.disabled = false;
+                btnApplyCoupon.innerHTML = '<i class="fa-solid fa-check"></i> Áp dụng';
+                console.error("Lỗi áp dụng mã:", err);
+                showCouponMessage('Không thể kết nối đến máy chủ để kiểm tra mã.', false);
+            });
+        }
+
+        // Hàm gỡ bỏ mã khuyến mãi
+        function removeCoupon() {
+            if (btnRemoveCoupon) btnRemoveCoupon.disabled = true;
+
+            fetch("{{ route('coupon.remove') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    subtotal: subtotal,
+                    shipping_fee: currentShippingFee
+                })
+            })
+            .then(res => res.json())
+            .then(body => {
+                if (btnRemoveCoupon) btnRemoveCoupon.disabled = false;
+                currentDiscount = 0;
+                currentCouponCode = '';
+
+                if (couponInput) couponInput.value = '';
+                if (couponAppliedContainer) couponAppliedContainer.style.display = 'none';
+                if (discountRow) discountRow.style.display = 'none';
+
+                showCouponMessage('Đã hủy bỏ áp dụng mã khuyến mãi.', true);
+                updateTotals(currentShippingFee);
+            })
+            .catch(err => {
+                if (btnRemoveCoupon) btnRemoveCoupon.disabled = false;
+                console.error("Lỗi gỡ mã:", err);
+            });
+        }
+
+        function showCouponMessage(msg, isSuccess) {
+            if (!couponMessage) return;
+            couponMessage.style.display = 'block';
+            couponMessage.style.color = isSuccess ? '#059669' : '#dc2626';
+            couponMessage.style.fontWeight = '600';
+            couponMessage.innerHTML = (isSuccess ? '<i class="fa-solid fa-circle-check"></i> ' : '<i class="fa-solid fa-circle-xmark"></i> ') + msg;
+        }
+
+        if (btnApplyCoupon) {
+            btnApplyCoupon.addEventListener('click', () => applyCoupon());
+        }
+
+        if (couponInput) {
+            couponInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    applyCoupon();
+                }
+            });
+        }
+
+        if (btnRemoveCoupon) {
+            btnRemoveCoupon.addEventListener('click', () => removeCoupon());
+        }
+
         // 4. Khi chọn Phường/Xã -> Tính cước vận chuyển GHN
         wardSelect.addEventListener('change', function () {
             if (toWardInput) toWardInput.value = this.value;
@@ -326,6 +627,11 @@
                 if (res.code === 200 && res.data) {
                     const fee = parseInt(res.data.total) || 0;
                     updateTotals(fee);
+
+                    // Nếu đang dùng mã freeship thì tính lại giảm giá với cước phí mới
+                    if (currentCouponCode) {
+                        applyCoupon(currentCouponCode);
+                    }
                 } else {
                     shippingFeeText.innerText = 'Chưa hỗ trợ';
                     updateTotals(0);
@@ -337,18 +643,6 @@
                 updateTotals(0);
             });
         });
-
-        function updateTotals(fee) {
-            shippingFeeText.innerText = new Intl.NumberFormat('vi-VN').format(fee) + ' VNĐ';
-            const finalAmount = subtotal + fee;
-            finalTotalText.innerText = new Intl.NumberFormat('vi-VN').format(finalAmount) + ' VNĐ';
-            if (totalPriceInput) {
-                totalPriceInput.value = finalAmount;
-            }
-            if (shippingFeeInput) {
-                shippingFeeInput.value = fee;
-            }
-        }
 
         // 5. Xử lý đổi phương thức thanh toán (COD / MoMo)
         const paymentCod = document.getElementById('payment_cod');

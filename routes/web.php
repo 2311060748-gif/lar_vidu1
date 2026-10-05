@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\MovieBookingController;
+use App\Http\Controllers\CouponController;
 use App\Models\Product;
 
 /*
@@ -542,6 +543,13 @@ Route::prefix('locations')->name('locations.')->group(function () {
     Route::get('/districts/{provinceId}', [GHNController::class, 'getDistricts'])->name('districts');
     Route::get('/wards/{districtId}', [GHNController::class, 'getWards'])->name('wards');
     Route::post('/calculate-fee', [GHNController::class, 'getShippingFee'])->name('fee');
+});
+
+// Khuyến mãi / Mã giảm giá (Coupons)
+Route::prefix('coupon')->name('coupon.')->group(function () {
+    Route::get('/available', [CouponController::class, 'getAvailable'])->name('available');
+    Route::post('/apply', [CouponController::class, 'apply'])->name('apply');
+    Route::post('/remove', [CouponController::class, 'remove'])->name('remove');
 });
 
 /*

@@ -96,6 +96,14 @@
                                     <td class="text-right text-muted">{{ number_format($order->ghn_total_fee, 0, ',', '.') }} đ</td>
                                 </tr>
                             @endif
+                            @if($order->discount_amount > 0)
+                                <tr>
+                                    <td colspan="3" class="text-right text-success font-weight-bold">
+                                        <i class="fa-solid fa-tag"></i> Khuyến mãi giảm giá {{ $order->coupon_code ? "({$order->coupon_code})" : '' }}:
+                                    </td>
+                                    <td class="text-right text-success font-weight-bold">-{{ number_format($order->discount_amount, 0, ',', '.') }} đ</td>
+                                </tr>
+                            @endif
                             <tr>
                                 <td colspan="3" class="text-right font-weight-bold text-danger" style="font-size: 1.1rem;">Tổng cộng thanh toán:</td>
                                 <td class="text-right font-weight-bold text-danger" style="font-size: 1.1rem;">{{ number_format($order->total_price, 0, ',', '.') }} đ</td>
