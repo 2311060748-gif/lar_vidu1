@@ -61,7 +61,7 @@ Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $requ
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'role:customer'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:customer'])->group(function () {
     Route::get('/customer/dashboard', [CustomerController::class, 'dashboard'])->name('customer.dashboard');
 });
 
@@ -71,7 +71,7 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'role:admin'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
     // Product CRUD
@@ -551,7 +551,7 @@ Route::prefix('locations')->name('locations.')->group(function () {
 */
 
 // Với USER:
-Route::middleware(['auth'])->prefix('user')->name('user.')->group(function () {
+Route::middleware(['auth', 'verified'])->prefix('user')->name('user.')->group(function () {
     // User gửi tin
     Route::post('/chat/send', [UserChatController::class, 'send'])->name('chat.send');
 

@@ -48,6 +48,23 @@ class AuthController extends Controller
             $request->session()->regenerate();
             $user = Auth::user();
 
+            // Nếu tài khoản chưa xác thực email, yêu cầu nhập mã OTP
+            if (!$user->hasVerifiedEmail()) {
+                if (!$user->verification_code || ($user->verification_code_expires_at && Carbon::now()->isAfter($user->verification_code_expires_at))) {
+                    $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+                    $user->update([
+                        'verification_code' => $code,
+                        'verification_code_expires_at' => Carbon::now()->addMinutes(15),
+                    ]);
+                    try {
+                        Mail::to($user->email)->send(new SendVerificationCodeMail($user, $code));
+                    } catch (\Exception $e) {
+                        // Bỏ qua lỗi gửi mail để không chặn luồng đăng nhập
+                    }
+                }
+                return redirect()->route('verification.notice')->with('info', 'Vui lòng nhập mã xác minh gồm 6 số đã được gửi đến Gmail.');
+            }
+
             return redirect()->intended(route($user->role . '.dashboard'))->with('success', 'Đăng nhập thành công!');
         }
 
@@ -75,17 +92,25 @@ class AuthController extends Controller
             'password.confirmed' => 'Xác nhận mật khẩu không khớp.',
         ]);
 
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => 'customer',
-            'email_verified_at' => Carbon::now(),
+            'verification_code' => $code,
+            'verification_code_expires_at' => Carbon::now()->addMinutes(15),
         ]);
 
         Auth::login($user);
 
-        return redirect()->route($user->role . '.dashboard')->with('success', 'Đăng ký tài khoản thành công!');
+        try {
+            Mail::to($user->email)->send(new SendVerificationCodeMail($user, $code));
+            return redirect()->route('verification.notice')->with('success', 'Đăng ký thành công! Mã xác minh 6 số đã được gửi tới Gmail của bạn.');
+        } catch (\Exception $e) {
+            return redirect()->route('verification.notice')->with('error', 'Không thể gửi email: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -93,11 +118,15 @@ class AuthController extends Controller
      */
     public function showVerifyCode()
     {
-        if (Auth::check()) {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        if (Auth::user()->hasVerifiedEmail()) {
             return redirect()->route(Auth::user()->role . '.dashboard');
         }
 
-        return redirect()->route('login');
+        return view('auth.verify-email');
     }
 
     /**
