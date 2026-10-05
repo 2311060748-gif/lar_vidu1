@@ -1,0 +1,1 @@
+{"version":1,"defects":[],"times":{"Tests\\Unit\\ExampleTest::test_example":1.224,"Tests\\Feature\\ExampleTest::test_example":2.431,"Tests\\Feature\\MovieBookingTest::test_movie_booking_form_renders_successfully":2.323,"Tests\\Feature\\MovieBookingTest::test_movie_booking_validation_errors":0.226,"Tests\\Feature\\MovieBookingTest::test_movie_booking_success":0.025}}
